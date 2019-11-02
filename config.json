@@ -1,0 +1,11 @@
+{
+    "title": "TITLE HERE",
+    "port": 80,
+    "refreshInterval": 500,
+    "serverList": [
+        {
+            "name": "SERVER NAME HERE",
+            "port": 1234
+        }
+    ]
+}

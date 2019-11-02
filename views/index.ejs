@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, user-scalable=no">
+        <title><%=config.title%></title>
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css"/>
+
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js"></script>
+    </head>
+    <body>
+        <div id="app">
+            <nav class="hero">
+                <div class="hero-body">
+                    <div class="container">
+                        <h1 class="title"><%=config.title%></h1>
+                        <h2 class="subtitle">
+                            on {{ sysinfo.os.hostname }} ({{ sysinfo.cpu.model }})
+                        </h2>
+                    </div>
+                </div>
+            </nav>
+            <div class="container">
+                <div class="tile is-ancestor">
+                    <div class="tile is-vertical is-parent">
+                        <div class="tile is-child box">
+                            <p class="title">System Information</p>
+                            <table class="table is-fullwidth">
+                                <tr>
+                                    <td>CPU</td>
+                                    <td>{{ sysinfo.cpu.model }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Memory</td>
+                                    <td>{{ (sysload.memory.total / 1073741824).toFixed(2) }}GB</td>
+                                </tr>
+                                <tr>
+                                    <td>Hostname</td>
+                                    <td>{{ sysinfo.os.hostname }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Platform</td>
+                                    <td>{{ sysinfo.os.platform }} ({{ sysinfo.os.version }})</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="tile is-child box">
+                            <p class="title">System Status</p>
+                            <p><b>Uptime</b>&nbsp;&nbsp;&nbsp;&nbsp;{{ sysload.uptime.days }}d {{ sysload.uptime.hours }}h {{ sysload.uptime.minutes }}m {{ sysload.uptime.seconds }}s</p><br />
+                            <p v-if="sysload.cpu.temperature != 0"><b>Temperature</b>&nbsp;&nbsp;&nbsp;&nbsp;{{ Math.floor(sysload.cpu.temp) }}°C</p><br v-if="sysload.cpu.temperature != 0"/>                            <p><b>CPU</b>&nbsp;&nbsp;&nbsp;&nbsp;{{ Math.floor(sysload.cpu.load) }}%</p>
+                            <progress class="progress is-primary" v-bind:value="Math.floor(sysload.cpu.load)" max="100"></progress>
+                            <p><b>Memory</b>&nbsp;&nbsp;&nbsp;&nbsp;{{ (sysload.memory.used / 1073741824).toFixed(2) }}GB / {{(sysload.memory.total / (1024 * 1024 * 1024)).toFixed(2) }}GB Used</p>
+                            <progress class="progress is-primary" v-bind:value="sysload.memory.used" v-bind:max="sysload.memory.total"></progress>
+                        </div>
+                    </div>
+                    <div class="tile is-parent">
+                        <div class="tile is-child box">
+                            <p class="title">Server List</p>
+                            <table class="table is-fullwidth is-striped is-hoverable">
+                                <thead>
+                                    <tr>
+                                        <th>Port</th>
+                                        <th>Server Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% for(var i=0; i<config.serverList.length; i++) { %>
+                                        <tr>
+                                            <td><%=config.serverList[i].port%></td>
+                                            <td><%=config.serverList[i].name%></td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            new Vue({
+                el: '#app',
+                data: {
+                    sysinfo: {
+                        cpu: {
+                            arch: '',
+                            model: ''
+                        },
+                        os: {
+                            hostname: '',
+                            platform: '',
+                            version: ''
+                        }
+                    },
+                    sysload: {
+                        memory: {
+                            free: 0,
+                            used: 0,
+                            total: 0
+                        },
+                        cpu: {
+                            load: 0,
+                            temperature: 0
+                        },
+                        uptime: {
+                            days: 0,
+                            hours: 0,
+                            minutes: 0,
+                            seconds: 0
+                        }
+                    },
+                    timer: [
+
+                    ]
+                },
+                created: function() {
+                    this.updateSysinfo();
+                    this.updateSysload();
+                    this.timer = setInterval(this.updateSysload, <%=config.refreshInterval%>);
+                },
+                methods: {
+                    updateSysinfo: function() {
+                        const req = new XMLHttpRequest();
+
+                        req.open('GET', '/sysinfo/info');
+                        req.send(null);
+                        req.onreadystatechange = (e) => {
+                            if(req.readyState != XMLHttpRequest.DONE)
+                                return;
+                            
+                            if(req.status == 200)
+                                this.sysinfo = JSON.parse(req.responseText);
+                        }
+                    },
+                    updateSysload: function() {
+                        const req = new XMLHttpRequest();
+
+                        req.open('GET', '/sysinfo/load');
+                        req.send();
+                        req.onreadystatechange = (e) => {
+                            if(req.readyState != XMLHttpRequest.DONE)
+                                return;
+
+                                if(req.status == 200)
+                            this.sysload = JSON.parse(req.responseText);
+                        }
+                    }
+                },
+                beforeDestroy() {
+                    clearInterval(this.timer);
+                }
+            });
+        </script>
+    </body>
+</html>

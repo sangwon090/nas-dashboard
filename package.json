@@ -1,0 +1,15 @@
+{
+  "name": "nas-dashboard",
+  "version": "1.0.0",
+  "main": "app.js",
+  "repository": "https://github.com/sangwon090/nas-dashboard",
+  "author": "Sangwon Ryu <bdboy090@naver.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "node ."
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "ejs": "^2.7.1"
+  }
+}
